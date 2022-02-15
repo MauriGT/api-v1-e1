@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Nette\Utils\Image;
+use Yajra\DataTables\DataTables;
 use function response;
 use Illuminate\Validation\ValidationException;
 
@@ -14,10 +15,10 @@ class ProductController extends Controller
     public function index()
     {
         $products = Product::all();
-
-        return response([
-            "products" => $products
-        ]);
+        return Datatables::of($products)
+            ->addIndexColumn()
+            ->rawColumns(['action'])
+            ->make(true);
     }
 
 
@@ -69,10 +70,10 @@ class ProductController extends Controller
     {
 
 
-        $path_info = pathinfo(  $request->file('image')->getClientOriginalName());
+        $path_info = pathinfo($request->file('image')->getClientOriginalName());
         $post_path = 'images/products';
         $rename = uniqid() . '.' . $path_info['extension'];
-        $request->file('image')->storeAs($post_path,$rename,'public');
+        $request->file('image')->storeAs($post_path, $rename, 'public');
 
         return "$post_path/$rename";
     }
@@ -80,19 +81,19 @@ class ProductController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function destroy($id): \Illuminate\Http\JsonResponse
     {
 
-        $product= Product::find($id);
-        if ( $product) {
-            unlink(public_path()."/storage/".$product->image);
+        $product = Product::find($id);
+        if ($product) {
+            unlink(public_path() . "/storage/" . $product->image);
             $product->delete();
             return response()->json([
                 "success" => true,
-                "message" => "Product deleted successfully."],200);
+                "message" => "Product deleted successfully."], 200);
         }
 
         return response()->json(['message' => 'Product not found'], 404);
@@ -102,16 +103,17 @@ class ProductController extends Controller
 
     public function show($id): \Illuminate\Http\JsonResponse
     {
-        $product= Product::find($id);
-        if ( $product) {
+        $product = Product::find($id);
+        if ($product) {
             return response()->json([
-                "product" => $product],200);
+                "product" => $product], 200);
         }
         return response()->json(['message' => 'Product not found.'], 404);
 
     }
 
-    public function update(Request $request,$id){
+    public function update(Request $request, $id)
+    {
 
 
         $validator = $request->validate([
@@ -124,10 +126,10 @@ class ProductController extends Controller
             'category' => 'required|string',
             'stock' => 'required|numeric',
         ]);
-        $product=Product::find($id);
-        if($product){
+        $product = Product::find($id);
+        if ($product) {
 
-            unlink(public_path()."/storage/".$product->image);
+            unlink(public_path() . "/storage/" . $product->image);
 
             $product->name = $request->name;
             $product->description = $request->description;
